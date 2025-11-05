@@ -1,0 +1,153 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  USER
+  OWNER
+  ADMIN
+}
+
+enum BookingStatus {
+  PENDING
+  CONFIRMED
+  CANCELLED
+  COMPLETED
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  name      String?
+  role      Role     @default(USER)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  bookings Booking[]
+  venues   Venue[]
+  coaches  Coach[]
+}
+
+model Sport {
+  id        String   @id @default(cuid())
+  slug      String   @unique
+  name      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  courts Court[]
+}
+
+model Venue {
+  id          String   @id @default(cuid())
+  name       String
+  description String?
+  address    String
+  city       String
+  neighborhood String?
+  lat        Float?
+  lng        Float?
+  ownerId    String
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  owner  User    @relation(fields: [ownerId], references: [id])
+  courts Court[]
+  images Image[]
+
+  @@index([city])
+  @@index([ownerId])
+}
+
+model Court {
+  id          String   @id @default(cuid())
+  venueId     String
+  sportId     String
+  indoor      Boolean  @default(false)
+  surface     String?
+  lights      Boolean  @default(false)
+  priceHour   Int      // in cents
+  openTime    Int      // minutes from midnight (0-1439)
+  closeTime   Int      // minutes from midnight (0-1439)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  venue       Venue       @relation(fields: [venueId], references: [id])
+  sport       Sport       @relation(fields: [sportId], references: [id])
+  bookings    Booking[]
+  blocks      CourtBlock[]
+  images      Image[]
+
+  @@index([venueId])
+  @@index([sportId])
+}
+
+model CourtBlock {
+  id        String   @id @default(cuid())
+  courtId   String
+  startTs   DateTime
+  endTs     DateTime
+  reason    String?
+  createdAt DateTime @default(now())
+
+  court Court @relation(fields: [courtId], references: [id])
+
+  @@index([courtId, startTs, endTs])
+}
+
+model Booking {
+  id        String        @id @default(cuid())
+  userId    String
+  courtId   String
+  startTs   DateTime
+  endTs     DateTime
+  status    BookingStatus @default(PENDING)
+  price     Int           // in cents
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+
+  user  User  @relation(fields: [userId], references: [id])
+  court Court @relation(fields: [courtId], references: [id])
+
+  @@index([courtId, startTs, endTs])
+  @@index([userId])
+}
+
+model Coach {
+  id        String   @id @default(cuid())
+  userId    String
+  sportId  String
+  bio       String?
+  rate      Int?     // in cents per hour
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user  User  @relation(fields: [userId], references: [id])
+  sport Sport @relation(fields: [sportId], references: [id])
+
+  @@index([userId])
+  @@index([sportId])
+}
+
+model Image {
+  id        String   @id @default(cuid())
+  url       String
+  venueId   String?
+  courtId   String?
+  createdAt DateTime @default(now())
+
+  venue Venue? @relation(fields: [venueId], references: [id])
+  court Court? @relation(fields: [courtId], references: [id])
+
+  @@index([venueId])
+  @@index([courtId])
+}
+
