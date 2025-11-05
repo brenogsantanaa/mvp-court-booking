@@ -2,8 +2,9 @@
 
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useSports } from '@/lib/hooks/useSports';
+import { Suspense } from 'react';
 
-export function SportFilter() {
+function SportFilterContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { data: sports, isLoading } = useSports();
@@ -39,6 +40,14 @@ export function SportFilter() {
         </button>
       ))}
     </div>
+  );
+}
+
+export function SportFilter() {
+  return (
+    <Suspense fallback={<div className="text-sm text-gray-500">Carregando esportes...</div>}>
+      <SportFilterContent />
+    </Suspense>
   );
 }
 

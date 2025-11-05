@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 
 interface Slot {
@@ -14,7 +14,7 @@ interface AvailabilityData {
   slots: Slot[];
 }
 
-export function AvailabilityGrid({ courtId }: { courtId: string }) {
+function AvailabilityGridContent({ courtId }: { courtId: string }) {
   const searchParams = useSearchParams();
   const router = useRouter();
   const [availability, setAvailability] = useState<AvailabilityData | null>(null);
@@ -154,6 +154,14 @@ export function AvailabilityGrid({ courtId }: { courtId: string }) {
         </div>
       )}
     </div>
+  );
+}
+
+export function AvailabilityGrid({ courtId }: { courtId: string }) {
+  return (
+    <Suspense fallback={<div className="text-center py-8 text-gray-500">Carregando horários...</div>}>
+      <AvailabilityGridContent courtId={courtId} />
+    </Suspense>
   );
 }
 

@@ -1,7 +1,7 @@
 'use client';
 
 import { useSearchParams, useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, Suspense } from 'react';
 import { SportFilter } from '@/components/SportFilter';
 import Link from 'next/link';
 
@@ -26,7 +26,7 @@ interface Court {
   priceHour: number;
 }
 
-export default function MapPage() {
+function MapPageContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const [courts, setCourts] = useState<Court[]>([]);
@@ -222,6 +222,20 @@ export default function MapPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export const dynamic = 'force-dynamic';
+
+export default function MapPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-gray-500">Carregando...</div>
+      </div>
+    }>
+      <MapPageContent />
+    </Suspense>
   );
 }
 
