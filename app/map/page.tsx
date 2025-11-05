@@ -138,8 +138,36 @@ function MapPageContent() {
             )}
 
             {error && (
-              <div className="text-center py-8 text-red-500">
-                Erro: {error}
+              <div className="text-center py-8">
+                <div className="text-red-500 font-semibold mb-2">Erro ao carregar quadras</div>
+                <div className="text-sm text-gray-600 mb-4">{error}</div>
+                <button
+                  onClick={() => {
+                    setError(null);
+                    setIsLoading(true);
+                    const params = new URLSearchParams({ city });
+                    if (sport) params.set('sport', sport);
+                    fetch(`/api/search?${params.toString()}`)
+                      .then(async (res) => {
+                        if (!res.ok) {
+                          const errorData = await res.json().catch(() => ({}));
+                          throw new Error(errorData.message || errorData.error || 'Failed to fetch courts');
+                        }
+                        return res.json();
+                      })
+                      .then((data) => {
+                        setCourts(data);
+                        setIsLoading(false);
+                      })
+                      .catch((err) => {
+                        setError(err.message);
+                        setIsLoading(false);
+                      });
+                  }}
+                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                >
+                  Tentar novamente
+                </button>
               </div>
             )}
 
