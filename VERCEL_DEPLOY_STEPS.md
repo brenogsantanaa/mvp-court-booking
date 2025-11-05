@@ -51,9 +51,26 @@ You'll be asked to enter your GitHub username and password (or personal access t
    - Click to expand
    - Add new variable:
      - **Name**: `DATABASE_URL`
-     - **Value**: `postgresql://postgres:BrenoFazenda123@db.fwoitgvlaarpqpnjvanj.supabase.co:5432/postgres`
+     - **Value**: Use Supabase Connection Pooler (see below) for better concurrency
      - **Environment**: Check all (Production, Preview, Development)
      - Click **"Add"**
+   
+   **⚠️ IMPORTANT: For High Concurrency (Many Agents/Requests at Once):**
+   
+   Use Supabase's **Connection Pooler** instead of direct connection:
+   
+   - Go to Supabase Dashboard → Settings → Database
+   - Find "Connection Pooling" section
+   - Use **Session mode** (port 5432) for Prisma:
+     ```
+     postgresql://postgres:[YOUR-PASSWORD]@db.[PROJECT-REF].supabase.co:5432/postgres?pgbouncer=true
+     ```
+   - Or use **Transaction mode** (port 6543):
+     ```
+     postgresql://postgres:[YOUR-PASSWORD]@db.[PROJECT-REF].supabase.co:6543/postgres
+     ```
+   
+   The connection pooler allows hundreds of concurrent requests without hitting connection limits!
 
 6. **Deploy**:
    - Click **"Deploy"** button
@@ -111,11 +128,34 @@ You can:
 
 ---
 
+## ⚡ Running Many Concurrent Requests (Agents)
+
+To handle many concurrent requests/agents at once on Vercel:
+
+1. **Use Supabase Connection Pooler** (see Step 5 above)
+   - This is essential for handling 100+ concurrent requests
+   - Direct connections (port 5432 without pooler) limit you to ~20-30 connections
+   - Connection pooler allows 1000+ concurrent connections
+
+2. **Vercel Auto-Scaling**
+   - Vercel automatically scales serverless functions
+   - Each API route can handle multiple concurrent requests
+   - The `vercel.json` file configures function memory and timeout
+
+3. **Prisma Client Optimization**
+   - The Prisma client is configured to reuse connections efficiently
+   - Connection pooling is handled at the database level (Supabase)
+
+4. **Monitor Performance**
+   - Check Vercel Analytics for function execution times
+   - Monitor Supabase dashboard for connection pool usage
+   - If you hit limits, consider upgrading Supabase plan
+
 ## 🔐 Security Note
 
 Your database password is visible in the connection string. For production:
 1. Consider creating a separate Supabase project for production
-2. Use Supabase's connection pooling
+2. Use Supabase's connection pooling (required for high concurrency)
 3. Set up proper database access controls
 
 ---
@@ -134,4 +174,16 @@ Your database password is visible in the connection string. For production:
 **404 errors?**
 - Make sure migrations ran on production database
 - Check that seed data was added (if needed)
+
+**"Too many connections" or connection errors under load?**
+- ⚠️ You MUST use Supabase Connection Pooler (see Step 5)
+- Direct connections (port 5432) are limited to ~20-30 concurrent connections
+- Switch to connection pooler URL (port 6543 or with ?pgbouncer=true)
+- This allows 1000+ concurrent connections
+
+**Slow responses with many concurrent requests?**
+- Check Vercel function logs for timeouts
+- Increase function memory in `vercel.json` if needed
+- Monitor Supabase connection pool usage
+- Consider upgrading Supabase plan if hitting connection limits
 
