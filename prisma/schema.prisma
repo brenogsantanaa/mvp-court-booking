@@ -44,6 +44,7 @@ model Sport {
   updatedAt DateTime @updatedAt
 
   courts Court[]
+  coaches Coach[]
 }
 
 model Venue {
