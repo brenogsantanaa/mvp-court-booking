@@ -73,7 +73,7 @@ export async function GET(request: NextRequest) {
     }));
 
     return NextResponse.json(result);
-  } catch (error) {
+  } catch (error: any) {
     if (error instanceof z.ZodError) {
       return NextResponse.json(
         { error: 'Invalid search parameters', details: error.errors },
@@ -81,8 +81,21 @@ export async function GET(request: NextRequest) {
       );
     }
     console.error('Error searching courts:', error);
+    
+    // Check if it's a database connection error
+    const errorMessage = error?.message || '';
+    const isDatabaseError = errorMessage.includes('table') || 
+                            errorMessage.includes('does not exist') ||
+                            errorMessage.includes('relation');
+    
     return NextResponse.json(
-      { error: 'Failed to search courts' },
+      { 
+        error: 'Failed to search courts',
+        message: isDatabaseError 
+          ? 'Database tables not found. Please run migrations.' 
+          : errorMessage,
+        details: process.env.NODE_ENV === 'development' ? errorMessage : undefined
+      },
       { status: 500 }
     );
   }

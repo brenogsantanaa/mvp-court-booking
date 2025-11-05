@@ -46,9 +46,10 @@ function MapPageContent() {
     }
 
     fetch(`/api/search?${params.toString()}`)
-      .then((res) => {
+      .then(async (res) => {
         if (!res.ok) {
-          throw new Error('Failed to fetch courts');
+          const errorData = await res.json().catch(() => ({}));
+          throw new Error(errorData.message || errorData.error || 'Failed to fetch courts');
         }
         return res.json();
       })
